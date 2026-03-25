@@ -1,122 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Automated ETL Pipeline — JK Chhabra</title>
+  <title>Retail Demand Forecasting — JK Chhabra</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f6fa; color: #1a1a2e; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f5f6fa; color:#1a1a2e; }
+    .header { background:#1a1a2e; padding:36px 40px; }
+    .header h1 { color:#fff; font-size:24px; font-weight:600; margin-bottom:6px; }
+    .header p  { color:#aab; font-size:14px; }
+    .header .badges { margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; }
+    .badge { padding:5px 14px; border-radius:20px; font-size:12px; font-weight:500; }
+    .b1 { background:#3776AB; color:#fff; }
+    .b2 { background:#4B8BBE; color:#fff; }
+    .b3 { background:#0668E1; color:#fff; }
+    .b4 { background:#3F4F75; color:#fff; }
 
-    .header { background: #1a1a2e; padding: 36px 40px; }
-    .header h1 { color: #fff; font-size: 24px; font-weight: 600; margin-bottom: 6px; }
-    .header p  { color: #aab; font-size: 14px; }
-    .header .badges { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
-    .badge { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-    .b-python  { background: #3776AB; color: #fff; }
-    .b-pandas  { background: #150458; color: #fff; }
-    .b-sqlite  { background: #003B57; color: #fff; }
-    .b-reportlab { background: #c0392b; color: #fff; }
+    .kpi-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:14px; padding:28px 40px 0; }
+    .kpi-card { background:#fff; border-radius:10px; padding:16px 20px; border-top:4px solid #4361ee; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .kpi-card.green  { border-top-color:#3f8600; }
+    .kpi-card.red    { border-top-color:#d62828; }
+    .kpi-card.purple { border-top-color:#7209b7; }
+    .kpi-card.amber  { border-top-color:#b35c00; }
+    .kpi-card .lbl { font-size:12px; color:#888; margin-bottom:6px; }
+    .kpi-card .val { font-size:20px; font-weight:600; color:#1a1a2e; }
 
-    .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; padding: 28px 40px 0; }
-    .kpi-card { background: #fff; border-radius: 10px; padding: 16px 20px; border-top: 4px solid #4361ee; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .kpi-card .lbl { font-size: 12px; color: #888; margin-bottom: 6px; }
-    .kpi-card .val { font-size: 20px; font-weight: 600; color: #1a1a2e; }
+    .section { padding:28px 40px; }
+    .section h2 { font-size:17px; font-weight:600; margin-bottom:16px; color:#1a1a2e; }
 
-    .section { padding: 28px 40px; }
-    .section h2 { font-size: 17px; font-weight: 600; margin-bottom: 16px; color: #1a1a2e; }
+    .models-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:0; }
+    .model-card { background:#fff; border-radius:10px; padding:18px 20px; box-shadow:0 1px 4px rgba(0,0,0,0.06); position:relative; }
+    .model-card.best { border:2px solid #3f8600; }
+    .best-badge { position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:#3f8600; color:#fff; font-size:11px; font-weight:600; padding:3px 12px; border-radius:20px; white-space:nowrap; }
+    .model-card .mname { font-size:14px; font-weight:600; margin-bottom:12px; color:#1a1a2e; }
+    .model-card .metric { display:flex; justify-content:space-between; font-size:13px; padding:5px 0; border-bottom:0.5px solid #f0f0f0; }
+    .model-card .metric:last-child { border-bottom:none; }
+    .model-card .metric .mk { color:#888; }
+    .model-card .metric .mv { font-weight:600; color:#1a1a2e; }
+    .model-card .metric .mv.good { color:#3f8600; }
+    .model-card .metric .mv.bad  { color:#d62828; }
 
-    .chart-wrap { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); text-align: center; }
-    .chart-wrap img { width: 100%; max-width: 960px; border-radius: 8px; }
+    .chart-section { padding:0 40px 28px; }
+    .chart-section h2 { font-size:17px; font-weight:600; margin-bottom:16px; color:#1a1a2e; }
+    .chart-wrap { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .chart-wrap iframe { width:100%; height:520px; border:none; display:block; }
 
-    .pipeline { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin-bottom: 24px; }
-    .stage { background: #fff; border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 14px 20px; text-align: center; min-width: 130px; }
-    .stage .icon { font-size: 22px; margin-bottom: 4px; }
-    .stage .name { font-size: 13px; font-weight: 600; color: #1a1a2e; }
-    .stage .desc { font-size: 11px; color: #888; margin-top: 2px; }
-    .arrow { font-size: 20px; color: #4361ee; padding: 0 8px; font-weight: 700; }
+    .insights-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+    .insight-card { background:#fff; border-radius:10px; padding:16px 20px; box-shadow:0 1px 4px rgba(0,0,0,0.06); border-left:4px solid #4361ee; }
+    .insight-card.green  { border-left-color:#3f8600; }
+    .insight-card.amber  { border-left-color:#b35c00; }
+    .insight-card .ititle { font-size:13px; font-weight:600; margin-bottom:6px; }
+    .insight-card .idesc  { font-size:12px; color:#555; line-height:1.6; }
 
-    .quality-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-    .q-card { background: #fff; border-radius: 10px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .q-card .issue { font-size: 13px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
-    .q-card .fix   { font-size: 12px; color: #555; }
-    .q-card .count { font-size: 22px; font-weight: 700; color: #4361ee; margin-bottom: 6px; }
+    .btn-row { display:flex; gap:14px; margin-top:20px; flex-wrap:wrap; }
+    .btn { padding:11px 24px; border-radius:8px; font-size:14px; font-weight:500; text-decoration:none; display:inline-block; }
+    .btn-primary { background:#4361ee; color:#fff; }
+    .btn-outline { background:#fff; color:#4361ee; border:1.5px solid #4361ee; }
 
-    .btn-row { display: flex; gap: 14px; margin-top: 20px; flex-wrap: wrap; }
-    .btn { padding: 11px 24px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; display: inline-block; }
-    .btn-primary { background: #4361ee; color: #fff; }
-    .btn-outline { background: #fff; color: #4361ee; border: 1.5px solid #4361ee; }
-
-    .footer { background: #1a1a2e; color: #aab; text-align: center; padding: 24px; font-size: 13px; margin-top: 20px; }
-    .footer a { color: #6faaff; text-decoration: none; }
+    .footer { background:#1a1a2e; color:#aab; text-align:center; padding:24px; font-size:13px; margin-top:20px; }
+    .footer a { color:#6faaff; text-decoration:none; }
   </style>
 </head>
 <body>
 
 <!-- HEADER -->
 <div class="header">
-  <h1>🔗 Automated ETL Pipeline</h1>
-  <p>Extract → Clean → Transform → Load → Report &nbsp;|&nbsp; JK Chhabra — Analytics Portfolio</p>
+  <h1>📈 Retail Demand Forecasting</h1>
+  <p>ARIMA vs Facebook Prophet — 12-week forward forecast with confidence intervals & inventory recommendations &nbsp;|&nbsp; JK Chhabra</p>
   <div class="badges">
-    <span class="badge b-python">Python</span>
-    <span class="badge b-pandas">Pandas</span>
-    <span class="badge b-sqlite">SQLite</span>
-    <span class="badge b-reportlab">ReportLab</span>
+    <span class="badge b1">Python</span>
+    <span class="badge b2">Statsmodels</span>
+    <span class="badge b3">Prophet</span>
+    <span class="badge b4">Plotly</span>
   </div>
 </div>
 
 <!-- KPI CARDS -->
 <div class="kpi-row">
-  <div class="kpi-card"><div class="lbl">Total Revenue</div><div class="val">$3,484,667</div></div>
-  <div class="kpi-card"><div class="lbl">Total Orders</div><div class="val">3,000</div></div>
-  <div class="kpi-card"><div class="lbl">Avg Order Value</div><div class="val">$1,161</div></div>
-  <div class="kpi-card"><div class="lbl">Unique Products</div><div class="val">29</div></div>
-  <div class="kpi-card"><div class="lbl">Top Category</div><div class="val">Electronics</div></div>
-  <div class="kpi-card"><div class="lbl">Top Region</div><div class="val">South</div></div>
+  <div class="kpi-card"><div class="lbl">Weekly Observations</div><div class="val">156</div></div>
+  <div class="kpi-card"><div class="lbl">Mean Sales/Week</div><div class="val">1,114</div></div>
+  <div class="kpi-card red"><div class="lbl">Min / Max</div><div class="val">631 / 1,933</div></div>
+  <div class="kpi-card green"><div class="lbl">Best Model</div><div class="val">Prophet</div></div>
+  <div class="kpi-card green"><div class="lbl">Prophet MAE</div><div class="val">67.4 units</div></div>
+  <div class="kpi-card purple"><div class="lbl">Forecast Horizon</div><div class="val">12 weeks</div></div>
 </div>
 
-<!-- PIPELINE STAGES -->
+<!-- MODEL COMPARISON -->
 <div class="section">
-  <h2>Pipeline Architecture</h2>
-  <div class="pipeline">
-    <div class="stage"><div class="icon">📥</div><div class="name">Extract</div><div class="desc">Raw data ingestion</div></div>
-    <div class="arrow">→</div>
-    <div class="stage"><div class="icon">🧹</div><div class="name">Transform</div><div class="desc">Clean & enrich</div></div>
-    <div class="arrow">→</div>
-    <div class="stage"><div class="icon">🗄️</div><div class="name">Load</div><div class="desc">SQLite database</div></div>
-    <div class="arrow">→</div>
-    <div class="stage"><div class="icon">📊</div><div class="name">Analyse</div><div class="desc">Charts & KPIs</div></div>
-    <div class="arrow">→</div>
-    <div class="stage"><div class="icon">📄</div><div class="name">Report</div><div class="desc">Auto PDF output</div></div>
-  </div>
-</div>
-
-<!-- DASHBOARD CHART -->
-<div class="section" style="padding-top:0;">
-  <h2>Analytics Dashboard Output</h2>
-  <div class="chart-wrap">
-    <img src="screenshots/etl_report_charts.png" alt="ETL Analytics Dashboard" />
+  <h2>Model Performance Comparison</h2>
+  <div class="models-grid">
+    <div class="model-card">
+      <div class="mname">ARIMA (2,1,2)</div>
+      <div class="metric"><span class="mk">MAE</span><span class="mv bad">187.6 units</span></div>
+      <div class="metric"><span class="mk">RMSE</span><span class="mv bad">299.5 units</span></div>
+      <div class="metric"><span class="mk">Stationarity</span><span class="mv">Differencing applied</span></div>
+      <div class="metric"><span class="mk">Best for</span><span class="mv">Simple linear trends</span></div>
+    </div>
+    <div class="model-card best">
+      <div class="best-badge">✅ Best Model</div>
+      <div class="mname">Facebook Prophet</div>
+      <div class="metric"><span class="mk">MAE</span><span class="mv good">67.4 units</span></div>
+      <div class="metric"><span class="mk">RMSE</span><span class="mv good">96.7 units</span></div>
+      <div class="metric"><span class="mk">Seasonality</span><span class="mv">Yearly detected</span></div>
+      <div class="metric"><span class="mk">Best for</span><span class="mv">Seasonal retail data</span></div>
+    </div>
   </div>
   <div class="btn-row">
-    <a class="btn btn-primary" href="output/etl_analytics_report.pdf" target="_blank">📄 Download PDF Report</a>
-    <a class="btn btn-outline" href="https://github.com/chhabrajk/automated-etl-pipeline" target="_blank">⭐ View on GitHub</a>
+    <a class="btn btn-primary" href="https://github.com/chhabrajk/retail-demand-forecasting" target="_blank">⭐ View on GitHub</a>
+    <a class="btn btn-outline" href="https://github.com/chhabrajk/retail-demand-forecasting/blob/main/main_script.py" target="_blank">📄 View Code</a>
   </div>
 </div>
 
-<!-- DATA QUALITY -->
-<div class="section" style="padding-top:0;">
-  <h2>Data Quality Issues Resolved</h2>
-  <div class="quality-grid">
-    <div class="q-card"><div class="count">60</div><div class="issue">Duplicates Removed</div><div class="fix">Detected via order_id deduplication</div></div>
-    <div class="q-card"><div class="count">90</div><div class="issue">Invalid Ages Fixed</div><div class="fix">Negative values set to NaN → median imputed</div></div>
-    <div class="q-card"><div class="count">60</div><div class="issue">Missing Values Imputed</div><div class="fix">Null ages filled with column median</div></div>
+<!-- INTERACTIVE CHART -->
+<div class="chart-section">
+  <h2>Interactive Forecast Dashboard</h2>
+  <div class="chart-wrap">
+    <iframe src="screenshots/demand_forecast.html" title="Demand Forecast Dashboard"></iframe>
+  </div>
+</div>
+
+<!-- BUSINESS INSIGHTS -->
+<div class="section">
+  <h2>Business Insights</h2>
+  <div class="insights-grid">
+    <div class="insight-card green">
+      <div class="ititle">📦 Inventory Recommendation</div>
+      <div class="idesc">Stock at least 15% above peak forecasted demand each week to maintain a safety buffer and avoid stockouts during high-demand periods.</div>
+    </div>
+    <div class="insight-card amber">
+      <div class="ititle">📅 Seasonality Detected</div>
+      <div class="idesc">Strong yearly seasonality with demand spikes around week 51–52 (Christmas). Plan procurement and logistics 6–8 weeks in advance of peak weeks.</div>
+    </div>
+    <div class="insight-card">
+      <div class="ititle">🔮 Why Prophet Wins</div>
+      <div class="idesc">Prophet handles yearly seasonality and holiday spikes natively — cutting MAE from 187 to 67 units vs ARIMA. Always test both models on your actual data.</div>
+    </div>
   </div>
 </div>
 
 <!-- FOOTER -->
 <div class="footer">
   Built by <a href="https://github.com/chhabrajk">JK Chhabra</a> &nbsp;·&nbsp;
-  <a href="https://github.com/chhabrajk/automated-etl-pipeline">GitHub Repo</a> &nbsp;·&nbsp;
+  <a href="https://github.com/chhabrajk/retail-demand-forecasting">GitHub Repo</a> &nbsp;·&nbsp;
   📧 jsinfo618@gmail.com
 </div>
 
